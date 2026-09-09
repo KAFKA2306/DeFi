@@ -5,15 +5,15 @@
       "pool": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2",
       "source_url": "https://github.com/aave-dao/aave-address-book/blob/main/src/AaveV3Ethereum.sol"
     },
-    "block_hash": "0x11909c7dfa90d565eb5639f2ed781a53cf13abb884342efe91a264f324139c71",
-    "block_number": 25892783,
+    "block_hash": "0xa89d22f50b208a857419e6a9969f7fd66206c32763f30381e141dea5c1f56287",
+    "block_number": 25942958,
     "code_sha256": {
       "aave_pool": "bf8a408a1f5440c167d91fa2d972deb23bb4d809e8dd089009885ec88a826f88",
       "aave_provider": "e5416052b67aa0475bffe5707510a1981ffcc131d9b49066d51f6e25eb6c5c9f",
       "uniswap_factory": "fd5e0ec0633afeb92b2f6b6cac36e13a9732bd1914f8158a78f127d51d54a572",
       "uniswap_pool": "59233bb70ef9835c75d34c54f5ee02b41f60b673e2374d9a111b75af28541a58"
     },
-    "observed_at": "2026-09-02T23:05:59+00:00",
+    "observed_at": "2026-09-09T22:59:35+00:00",
     "uniswap_v3": {
       "factory": "0x1F98431c8aD98523631AE4a59f267346ea31F984",
       "fee": 3000,

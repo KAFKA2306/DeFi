@@ -1,0 +1,1 @@
+{"jsonrpc":"2.0","id":123,"error":{"code":-32001,"message":"Block range too large: maximum allowed is 50 blocks on your current plan. Upgrade your subscription at https://nodies.app for larger ranges."}}

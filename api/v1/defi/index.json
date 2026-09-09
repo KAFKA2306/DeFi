@@ -1,15 +1,15 @@
 {
   "coverage": {
-    "aave_event_count": 478060,
-    "aave_liquidation_count": 2749,
+    "aave_event_count": 515277,
+    "aave_liquidation_count": 2771,
     "contract_change_count": 1,
-    "day_count": 107,
+    "day_count": 114,
     "first_date": "2026-05-18",
-    "last_date": "2026-09-01",
+    "last_date": "2026-09-08",
     "protocol_count": 2,
-    "raw_evidence_count": 386,
-    "span_days": 106,
-    "uniswap_swap_count": 57417
+    "raw_evidence_count": 409,
+    "span_days": 113,
+    "uniswap_swap_count": 61861
   },
   "dataset": "Ethereum DeFi primary evidence",
   "protocols": {
@@ -31,7 +31,7 @@
       "source_url": "https://github.com/Uniswap/v3-periphery/blob/main/deploys.md"
     }
   },
-  "retrieved_at": "2026-09-02T23:20:26.505658+00:00",
+  "retrieved_at": "2026-09-09T23:17:30.151017+00:00",
   "rules": [
     "only complete UTC days whose end boundary is below the finalized Ethereum block are published",
     "Aave and Uniswap observations are decoded from canonical contract logs, not aggregator metrics",

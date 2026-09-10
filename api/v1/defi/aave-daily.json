@@ -5519,6 +5519,53 @@
         "0xe343167631d89b6ffc58b88d6b7fb0228795491d"
       ],
       "reserve_count": 34
+    },
+    {
+      "date": "2026-09-09",
+      "event_count": 5421,
+      "event_counts": {
+        "borrow": 1064,
+        "liquidation": 3,
+        "repay": 820,
+        "supply": 1618,
+        "withdraw": 1916
+      },
+      "protocol": "aave_v3",
+      "reserve_addresses": [
+        "0x111111111117dc0aa78b770fa6a738034120c302",
+        "0x18084fba666a33d37592fa2633fd49a74dd93a88",
+        "0x1abaea1f7c830bd89acc67ec4af516284b1bc33c",
+        "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+        "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        "0x356b8d89c1e1239cbbb9de4815c39a1474d5ba7d",
+        "0x40d16fc0246ad3160ccc09b8d0d3a2cd28ae6c2f",
+        "0x4c9edd5852cd905f086c759e8383e09bff1e68b3",
+        "0x514910771af9ca656af840dff83e8264ecf986ca",
+        "0x59bc9fae5d62b19d4f8d07d758047acb9ee19d34",
+        "0x68749665ff8d2d112fa859aa293f07a622782f38",
+        "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "0x6c3ea9036406852006290770bedfcaba0e23a0e8",
+        "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
+        "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+        "0x8236a87084f8b84306f72007f36f2618a5634494",
+        "0x8292bb45bf1ee4d140127049757c2e0ff06317ed",
+        "0x9d39a5de30e57443bff2a8307a4256c8797a3497",
+        "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "0xaca92e438df0b2401ff60da7e4337b687a2435da",
+        "0xae78736cd615f374d3085123a210448e74fc6393",
+        "0xb0f70c0bd6fd87dbeb7c10dc692a2a6106817072",
+        "0xbe9895146f7af43049ca1c1ae358b0541ea49704",
+        "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "0xc139190f447e929f090edeb554d95abb8b18ac1c",
+        "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
+        "0xcd5fe23c85820f7b72d0926fc9b05b43e359b7ee",
+        "0xd533a949740bb3306d119cc777fa900ba034cd52",
+        "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "0xdc035d45d973e3ec169d2276ddab16f1e407384f",
+        "0xe343167631d89b6ffc58b88d6b7fb0228795491d",
+        "0xf1c9acdc66974dfb6decb12aa385b9cd01190e38"
+      ],
+      "reserve_count": 32
     }
   ],
   "schema_version": 1

@@ -102,8 +102,13 @@ class EvidenceStore:
     def save(self, raw: bytes, source_url: str, request_body: object) -> dict[str, Any]:
         digest = sha256(raw)
         path = self.objects / f"{digest}.json"
-        if not path.exists():
+        if path.exists():
+            if sha256(path.read_bytes()) != digest:
+                raise ValueError(f"raw evidence hash mismatch: {path}")
+        else:
             path.write_bytes(raw)
+            if sha256(path.read_bytes()) != digest:
+                raise ValueError(f"raw evidence hash mismatch after write: {path}")
         return {
             "source_url": source_url,
             "sha256": digest,

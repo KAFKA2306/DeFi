@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 from build_raw_evidence_view import build as build_raw_evidence_view, build_locators
-from defi import AAVE_EVENT_SIGNATURES, aave_daily, canonical_json, decode_int256, load_raw_ref, sha256, uniswap_daily
+from defi import AAVE_EVENT_SIGNATURES, EvidenceStore, aave_daily, canonical_json, decode_int256, load_raw_ref, sha256, uniswap_daily
 
 
 class DefiEvidenceTests(unittest.TestCase):
@@ -42,6 +42,30 @@ class DefiEvidenceTests(unittest.TestCase):
         self.assertEqual(row["swap_count"], 2)
         self.assertEqual(row["gross_token0"], 5.0)
         self.assertEqual(row["gross_token1"], 3.0)
+
+    def test_evidence_store_reuses_only_matching_content(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            store = EvidenceStore(root)
+            raw = canonical_json({"jsonrpc": "2.0", "id": 1, "result": []})
+            request = {"jsonrpc": "2.0", "id": 1, "method": "eth_test", "params": []}
+
+            first_ref = store.save(raw, "https://example.invalid", request)
+            path = root / first_ref["path"]
+            self.assertEqual(first_ref["sha256"], sha256(raw))
+            self.assertEqual(path.read_bytes(), raw)
+
+            first_mtime_ns = path.stat().st_mtime_ns
+            second_ref = store.save(raw, "https://example.invalid", request)
+            self.assertEqual(second_ref, first_ref)
+            self.assertEqual(path.stat().st_mtime_ns, first_mtime_ns)
+            self.assertEqual(path.read_bytes(), raw)
+
+            corrupted = b"{}"
+            path.write_bytes(corrupted)
+            with self.assertRaisesRegex(ValueError, "raw evidence hash mismatch"):
+                store.save(raw, "https://example.invalid", request)
+            self.assertEqual(path.read_bytes(), corrupted)
 
     def test_raw_reference_hash_is_verified(self):
         with tempfile.TemporaryDirectory() as tmp:

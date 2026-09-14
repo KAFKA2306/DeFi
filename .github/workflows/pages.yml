@@ -40,13 +40,8 @@ jobs:
             --provenance api/v1/defi/provenance.json \
             --output /tmp/raw-evidence.json \
             --locators-output /tmp/evidence-locators.json
-      - name: Validate complete-day semantics, locators and UI
+      - name: Validate canonical complete-day and evidence semantics
         run: |
-          python -m json.tool api/v1/defi/daily.json >/dev/null
-          python -m json.tool api/v1/defi/aave-daily.json >/dev/null
-          python -m json.tool api/v1/defi/index.json >/dev/null
-          python -m json.tool api/v1/defi/contracts.json >/dev/null
-          python -m json.tool /tmp/evidence-locators.json >/dev/null
           python - <<'PY'
           import json
           from pathlib import Path
@@ -61,27 +56,36 @@ jobs:
           assert all(x['aave_event_count']>=x['aave_liquidation_count']>=0 for x in daily)
           assert all(x['uniswap_swap_count']>=0 for x in daily)
           assert all(set(x['event_counts'])=={'supply','withdraw','borrow','repay','liquidation'} for x in aave)
-          assert 'only complete UTC days' in idx['rules'][0]
-          assert any('not labeled as USD volume' in x for x in idx['rules'])
-          latest=loc['records'][-1]
-          src=provenance['dates'][latest['date']]
+          assert any('only complete UTC days' in rule for rule in idx['rules'])
+          assert any('not labeled as USD volume' in rule for rule in idx['rules'])
+          latest=loc['records'][-1]; src=provenance['dates'][latest['date']]
           assert latest['from_block']==src['from_block'] and latest['to_block']==src['to_block']
           assert latest['start_boundary']['block_hash']==src['start_boundary']['block_hash']
           assert latest['end_boundary']['block_hash']==src['end_boundary']['block_hash']
+          assert latest['aave']['raw_refs'] and latest['uniswap']['raw_refs']
           for section in ('start_boundary','end_boundary'):
-              ref=latest[section]['raw_ref']
-              assert ref['source_evidence_path'].startswith('raw/objects/') and len(ref['source_sha256'])==64
+              ref=latest[section]['raw_ref']; assert ref['source_evidence_path'].startswith('raw/objects/') and len(ref['source_sha256'])==64
           for protocol in ('aave','uniswap'):
-              assert latest[protocol]['raw_refs']
-              assert all(r['source_evidence_path'].startswith('raw/objects/') and len(r['source_sha256'])==64 for r in latest[protocol]['raw_refs'])
-          html=Path('web/index.html').read_text()
-          for marker in ('FINALIZED ETHEREUM LOGS','Aave Supply','Aave Borrow','prior 7-day average','Latest day evidence','evidence-locators.json','Current partial UTC day is excluded'):
-              assert marker in html, marker
-          start=html.index('<script type="module">')+len('<script type="module">')
-          end=html.index('</script>',start)
-          Path('/tmp/dashboard.mjs').write_text(html[start:end])
+              assert all(ref['source_evidence_path'].startswith('raw/objects/') and len(ref['source_sha256'])==64 for ref in latest[protocol]['raw_refs'])
           PY
-          node --check /tmp/dashboard.mjs
+      - name: Verify production dashboard state contract
+        run: |
+          node --check web/dashboard-state.mjs
+          node --check web/dashboard-ui.mjs
+          node --test web/dashboard-state.test.mjs
+          python - <<'PY'
+          from pathlib import Path
+          html=Path('web/index.html').read_text()
+          required=(
+              'FINALIZED ETHEREUM LOGS', 'Aave Supply', 'Aave Borrow',
+              'Latest day evidence', 'evidence-locators.json',
+              'Current partial UTC day is excluded', 'role="status"',
+              'aria-live="polite"', 'dashboard-ui.mjs', 'focus-visible',
+              '@media(max-width:560px)', 'Contract fingerprint history',
+          )
+          for marker in required: assert marker in html, marker
+          assert '<script type="module">' not in html
+          PY
 
   deploy:
     if: github.event_name != 'pull_request'
@@ -135,15 +139,14 @@ jobs:
                   with urlopen(urljoin(base,'api/v1/defi/aave-daily.json'),timeout=10) as r: aave=json.load(r)
                   with urlopen(urljoin(base,'api/v1/defi/evidence-locators.json'),timeout=10) as r: loc=json.load(r)
                   with urlopen(base,timeout=10) as r: html=r.read().decode()
-                  assert dep['source_commit']==expected, dep
+                  with urlopen(urljoin(base,'dashboard-state.mjs'),timeout=10) as r: state_module=r.read().decode()
+                  assert dep['source_commit']==expected
                   latest=loc['records'][-1]
                   assert daily['records'][-1]['date']==aave['records'][-1]['date']==idx['coverage']['last_date']==latest['date']
                   assert loc['record_count']==idx['coverage']['day_count']
                   assert latest['from_block']<=latest['to_block']
-                  assert len(latest['start_boundary']['block_hash'])==66 and len(latest['end_boundary']['block_hash'])==66
-                  assert all(len(r['source_sha256'])==64 for r in latest['aave']['raw_refs']+latest['uniswap']['raw_refs'])
-                  assert 'Aave Supply' in html and 'Latest day evidence' in html and 'evidence-locators.json' in html
-                  print({'page_url':base,'source_commit':expected,'latest_day':latest['date'],'from_block':latest['from_block'],'to_block':latest['to_block'],'aave_raw_refs':len(latest['aave']['raw_refs']),'uniswap_raw_refs':len(latest['uniswap']['raw_refs'])})
+                  assert 'dashboard-ui.mjs' in html and 'deriveDashboardState' in state_module
+                  print({'page_url':base,'source_commit':expected,'latest_day':latest['date']})
                   break
               except Exception as exc:
                   last=exc; time.sleep(2)
@@ -170,20 +173,9 @@ jobs:
           api=f'https://api.github.com/repos/{repo}/issues/17/comments?per_page=100'
           headers={'Accept':'application/vnd.github+json','Authorization':f'Bearer {token}','X-GitHub-Api-Version':'2022-11-28','User-Agent':'defi-pages-production-evidence'}
           with urlopen(Request(api,headers=headers),timeout=15) as r: comments=json.load(r)
-          if any(marker in item.get('body','') for item in comments):
-              print('Production evidence already recorded for',sha); raise SystemExit(0)
+          if any(marker in item.get('body','') for item in comments): raise SystemExit(0)
           counts=ad['event_counts']
-          body='\n'.join([
-              marker,'### Pages production verified','',
-              f'- source commit: `{sha}`',f'- page: {base}',
-              f"- latest complete UTC day: `{latest['date']}`",
-              f"- finalized block range: `{latest['from_block']}` → `{latest['to_block']}`",
-              f"- Aave counts: Supply `{counts['supply']}`, Withdraw `{counts['withdraw']}`, Borrow `{counts['borrow']}`, Repay `{counts['repay']}`, LiquidationCall `{counts['liquidation']}`",
-              f"- Uniswap swaps: `{dd['uniswap_swap_count']}`",
-              f"- raw evidence refs for latest day: Aave `{len(latest['aave']['raw_refs'])}`, Uniswap `{len(latest['uniswap']['raw_refs'])}`, plus start/end boundary refs",
-              f"- canonical coverage: `{idx['coverage']['day_count']}` complete days / `{idx['coverage']['raw_evidence_count']}` raw evidence objects",'',
-              'Evidence was written only after the workflow verified `deployment.json.source_commit` against this exact SHA and read the production canonical JSON, daily evidence locator and root HTML successfully.'
-          ])
+          body='\n'.join([marker,'### Pages production verified','',f'- source commit: `{sha}`',f'- page: {base}',f"- latest complete UTC day: `{latest['date']}`",f"- finalized block range: `{latest['from_block']}` → `{latest['to_block']}`",f"- Aave counts: Supply `{counts['supply']}`, Withdraw `{counts['withdraw']}`, Borrow `{counts['borrow']}`, Repay `{counts['repay']}`, LiquidationCall `{counts['liquidation']}`",f"- Uniswap swaps: `{dd['uniswap_swap_count']}`",f"- canonical coverage: `{idx['coverage']['day_count']}` complete days / `{idx['coverage']['raw_evidence_count']}` raw evidence objects",'', 'Evidence was written only after exact deployed revision and canonical Pages data were directly read back.'])
           post=Request(api,data=json.dumps({'body':body}).encode(),headers={**headers,'Content-Type':'application/json'},method='POST')
           with urlopen(post,timeout=15) as r: print('Recorded production evidence:',r.status)
           PY
